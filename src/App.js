@@ -31,13 +31,20 @@ const MQTT_PASSWORD = "18122002Pi";
 const topics = [
   "estacionamiento/plaza1/estado",
   "estacionamiento/plaza2/estado",
+  "estacionamiento/plaza3/estado",
+  "estacionamiento/puerta/entrada/estado",
+  "estacionamiento/puerta/salida/estado",
   "estacionamiento/modo/estado",
 ];
 
 export default function App() {
   const [plaza1, setPlaza1] = useState({ ocupado: false, distancia: 0 });
   const [plaza2, setPlaza2] = useState({ ocupado: false, distancia: 0 });
-  const [puertaAbierta, setPuertaAbierta] = useState(false);
+  const [plaza3, setPlaza3] = useState({ ocupado: false, distancia: 0 });
+
+  const [puertaEntradaAbierta, setPuertaEntradaAbierta] = useState(false);
+  const [puertaSalidaAbierta, setPuertaSalidaAbierta] = useState(false);
+
   const [modoAutomatico, setModoAutomatico] = useState(false);
   const [connected, setConnected] = useState(false);
   const [mqttClient, setMqttClient] = useState(null);
@@ -70,18 +77,17 @@ export default function App() {
     client.on("message", (topic, message) => {
       try {
         const payload = JSON.parse(message.toString());
+
         if (topic.includes("plaza1")) {
-          setPlaza1({
-            ocupado: payload.ocupado,
-            distancia: payload.distancia,
-          });
-          setPuertaAbierta(payload.puertaAbierta);
+          setPlaza1({ ocupado: payload.ocupado, distancia: payload.distancia });
         } else if (topic.includes("plaza2")) {
-          setPlaza2({
-            ocupado: payload.ocupado,
-            distancia: payload.distancia,
-          });
-          setPuertaAbierta(payload.puertaAbierta);
+          setPlaza2({ ocupado: payload.ocupado, distancia: payload.distancia });
+        } else if (topic.includes("plaza3")) {
+          setPlaza3({ ocupado: payload.ocupado, distancia: payload.distancia });
+        } else if (topic.includes("puerta/entrada")) {
+          setPuertaEntradaAbierta(payload.abierta);
+        } else if (topic.includes("puerta/salida")) {
+          setPuertaSalidaAbierta(payload.abierta);
         } else if (topic.includes("modo")) {
           setModoAutomatico(payload.automatico);
         }
@@ -94,11 +100,17 @@ export default function App() {
   }, []);
 
   // --- Funciones de control ---
-  const handleAbrirPuerta = () => {
-    mqttClient?.publish("estacionamiento/puerta/control", "abrir");
+  const handleAbrirEntrada = () => {
+    mqttClient?.publish("estacionamiento/puerta/control", "abrirEntrada");
   };
-  const handleCerrarPuerta = () => {
-    mqttClient?.publish("estacionamiento/puerta/control", "cerrar");
+  const handleCerrarEntrada = () => {
+    mqttClient?.publish("estacionamiento/puerta/control", "cerrarEntrada");
+  };
+  const handleAbrirSalida = () => {
+    mqttClient?.publish("estacionamiento/puerta/control", "abrirSalida");
+  };
+  const handleCerrarSalida = () => {
+    mqttClient?.publish("estacionamiento/puerta/control", "cerrarSalida");
   };
   const handleToggleModo = () => {
     const nuevoModo = !modoAutomatico;
@@ -173,7 +185,7 @@ export default function App() {
       </Box>
 
       <Stack spacing={3} sx={{ width: "100%" }}>
-        {/* --- CONFIGURACIÓN WIFI --- */}
+        {/* CONFIGURACIÓN WIFI */}
         <Card elevation={5} sx={{ background: "#f1f8e9" }}>
           <CardContent>
             <Typography variant="h6" fontWeight="bold" mb={2} color="primary">
@@ -218,7 +230,7 @@ export default function App() {
           </CardContent>
         </Card>
 
-        {/* --- MODO --- */}
+        {/* MODO */}
         <Card
           elevation={5}
           sx={{
@@ -259,14 +271,14 @@ export default function App() {
           </CardContent>
         </Card>
 
-        {/* --- PLAZAS --- */}
+        {/* PLAZAS */}
         <Box>
           <Typography variant="h6" fontWeight="bold" color="#1565c0" mb={1}>
             Estado de Plazas
           </Typography>
           <Grid container spacing={2}>
-            {[plaza1, plaza2].map((plaza, i) => (
-              <Grid key={i} item xs={12} sm={6}>
+            {[plaza1, plaza2, plaza3].map((plaza, i) => (
+              <Grid key={i} item xs={12} sm={4}>
                 <Fade in timeout={500}>
                   <Card
                     elevation={4}
@@ -307,24 +319,27 @@ export default function App() {
           </Grid>
         </Box>
 
-        {/* --- PUERTA --- */}
+        {/* CONTROL DE PUERTAS */}
         <Divider />
         <Box>
           <Typography variant="h6" fontWeight="bold" color="#6d4c41" mb={1}>
-            Control de Puerta
+            Control de Puertas
           </Typography>
+
+          {/* Puerta Entrada */}
           <Card
             elevation={5}
             sx={{
-              bgcolor: puertaAbierta ? "#e3f2fd" : "#f5f5f5",
+              bgcolor: puertaEntradaAbierta ? "#e3f2fd" : "#f5f5f5",
               py: 2,
+              mb: 3,
               transition: "0.3s",
             }}
           >
             <CardContent sx={{ textAlign: "center" }}>
               <Avatar
                 sx={{
-                  bgcolor: puertaAbierta ? "info.main" : "grey.500",
+                  bgcolor: puertaEntradaAbierta ? "info.main" : "grey.500",
                   mx: "auto",
                   mb: 1,
                 }}
@@ -332,8 +347,8 @@ export default function App() {
                 <DoorFrontIcon />
               </Avatar>
               <Chip
-                label={puertaAbierta ? "Puerta Abierta" : "Puerta Cerrada"}
-                color={puertaAbierta ? "info" : "default"}
+                label={puertaEntradaAbierta ? "Puerta Entrada Abierta" : "Puerta Entrada Cerrada"}
+                color={puertaEntradaAbierta ? "info" : "default"}
                 sx={{ mb: 2 }}
               />
               <Stack
@@ -345,7 +360,7 @@ export default function App() {
                   variant="contained"
                   color="info"
                   disabled={!connected}
-                  onClick={handleAbrirPuerta}
+                  onClick={handleAbrirEntrada}
                   sx={{ borderRadius: "50px", px: 4 }}
                 >
                   Abrir
@@ -354,7 +369,58 @@ export default function App() {
                   variant="contained"
                   color="warning"
                   disabled={!connected}
-                  onClick={handleCerrarPuerta}
+                  onClick={handleCerrarEntrada}
+                  sx={{ borderRadius: "50px", px: 4 }}
+                >
+                  Cerrar
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          {/* Puerta Salida */}
+          <Card
+            elevation={5}
+            sx={{
+              bgcolor: puertaSalidaAbierta ? "#e3f2fd" : "#f5f5f5",
+              py: 2,
+              transition: "0.3s",
+            }}
+          >
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: puertaSalidaAbierta ? "info.main" : "grey.500",
+                  mx: "auto",
+                  mb: 1,
+                }}
+              >
+                <DoorFrontIcon />
+              </Avatar>
+              <Chip
+                label={puertaSalidaAbierta ? "Puerta Salida Abierta" : "Puerta Salida Cerrada"}
+                color={puertaSalidaAbierta ? "info" : "default"}
+                sx={{ mb: 2 }}
+              />
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                justifyContent="center"
+              >
+                <Button
+                  variant="contained"
+                  color="info"
+                  disabled={!connected}
+                  onClick={handleAbrirSalida}
+                  sx={{ borderRadius: "50px", px: 4 }}
+                >
+                  Abrir
+                </Button>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  disabled={!connected}
+                  onClick={handleCerrarSalida}
                   sx={{ borderRadius: "50px", px: 4 }}
                 >
                   Cerrar
@@ -364,15 +430,14 @@ export default function App() {
           </Card>
         </Box>
 
-        {/* --- ALERTA --- */}
+        {/* ALERTA */}
         {!connected && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            La conexión MQTT está inactiva. No se pueden controlar la puerta ni
-            mostrar los últimos estados.
+            La conexión MQTT está inactiva. No se pueden controlar la puerta ni mostrar los últimos estados.
           </Alert>
         )}
 
-        {/* --- FOOTER --- */}
+        {/* FOOTER */}
         <Box textAlign="center" mt={3} color="#889">
           <Typography variant="caption">
             Smart Parking Dashboard · React · MQTT · Material UI · 2025
