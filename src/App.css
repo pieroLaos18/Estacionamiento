@@ -1,64 +1,247 @@
-/* === Estilos generales del dashboard === */
-body {
-  background-color: #f7f9fc;
-  margin: 0;
-  font-family: "Roboto", sans-serif;
-}
+/* App.css */
 
-header {
-  background: linear-gradient(90deg, #1565c0 0%, #1e88e5 100%);
-  color: white;
-  padding: 1rem 2rem;
+/* --- Layout General --- */
+.app-container {
+  padding-top: 40px;
+  padding-bottom: 40px;
+  padding-left: 16px;
+  padding-right: 16px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  min-height: 100vh;
+  background-color: #fafafa;
 }
 
-header h2 {
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.app-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.status-chip {
-  font-weight: bold;
-  font-size: 1rem !important;
+.app-alert {
+  margin-top: 16px;
 }
 
-/* === Tarjetas === */
-.MuiCard-root {
-  transition: all 0.3s ease;
-  cursor: default;
-}
-
-.MuiCard-root:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* === Botones === */
-button.MuiButton-root {
-  border-radius: 10px !important;
-  font-weight: 600 !important;
-}
-
-button.MuiButton-containedInfo {
-  background-color: #1976d2 !important;
-}
-
-button.MuiButton-containedWarning {
-  background-color: #f57c00 !important;
-}
-
-button.MuiButton-containedSuccess {
-  background-color: #2e7d32 !important;
-}
-
-/* === Pie de página === */
-footer {
+/* --- Header --- */
+.header-container {
   text-align: center;
-  padding: 1rem;
-  margin-top: 2rem;
-  color: #888;
-  font-size: 0.85rem;
+  margin-bottom: 24px;
+}
+
+.header-avatar {
+  background-color: #1565c0 !important;
+  width: 64px !important;
+  height: 64px !important;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 8px;
+}
+
+.header-title {
+  font-weight: bold !important;
+  color: #123;
+}
+
+.header-subtitle {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.header-badge {
+  margin-top: 8px;
+}
+
+.header-chip {
+  font-weight: bold !important;
+  margin-top: 8px;
+}
+
+/* --- WifiConfig --- */
+.wifi-card {
+  background: #f1f8e9 !important;
+  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 6px 10px 0px rgba(0, 0, 0, 0.14), 0px 1px 18px 0px rgba(0, 0, 0, 0.12) !important;
+  /* elevation 5 */
+}
+
+.wifi-title {
+  font-weight: bold !important;
+  margin-bottom: 16px !important;
+  color: #1976d2;
+  /* primary main */
+}
+
+.wifi-button-container {
+  text-align: center;
+}
+
+.wifi-button {
+  border-radius: 50px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+.wifi-alert {
+  margin-top: 16px;
+}
+
+/* --- ModeControl --- */
+.mode-card {
+  transition: 0.4s !important;
+  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 6px 10px 0px rgba(0, 0, 0, 0.14), 0px 1px 18px 0px rgba(0, 0, 0, 0.12) !important;
+  /* elevation 5 */
+}
+
+.mode-auto {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9) !important;
+}
+
+.mode-manual {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+}
+
+.mode-content {
+  text-align: center;
+}
+
+.mode-avatar {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 8px;
+}
+
+.avatar-success {
+  background-color: #2e7d32 !important;
+  /* success.main */
+}
+
+.avatar-warning {
+  background-color: #ed6c02 !important;
+  /* warning.main */
+}
+
+.mode-text {
+  margin-bottom: 8px !important;
+}
+
+.mode-button {
+  border-radius: 50px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  text-transform: none !important;
+  font-weight: bold !important;
+}
+
+/* --- ParkingSpots --- */
+.spots-title {
+  font-weight: bold !important;
+  color: #1565c0;
+  margin-bottom: 8px !important;
+}
+
+.spot-card {
+  transition: 0.3s !important;
+  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12) !important;
+  /* elevation 4 */
+}
+
+.spot-card:hover {
+  transform: scale(1.03);
+}
+
+.spot-occupied {
+  background: linear-gradient(135deg, #ffcdd2, #ef9a9a) !important;
+}
+
+.spot-free {
+  background: linear-gradient(135deg, #c8e6c9, #a5d6a7) !important;
+}
+
+.spot-content {
+  text-align: center;
+}
+
+.spot-avatar {
+  width: 50px !important;
+  height: 50px !important;
+  margin-bottom: 8px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.avatar-error {
+  background-color: #d32f2f !important;
+  /* error.main */
+}
+
+.spot-chip {
+  font-weight: bold !important;
+  margin-top: 8px;
+}
+
+.spot-distance {
+  margin-top: 8px;
+}
+
+/* --- DoorControl --- */
+.doors-title {
+  font-weight: bold !important;
+  color: #6d4c41;
+  margin-bottom: 8px !important;
+}
+
+.door-card {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  transition: 0.3s !important;
+  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 6px 10px 0px rgba(0, 0, 0, 0.14), 0px 1px 18px 0px rgba(0, 0, 0, 0.12) !important;
+  /* elevation 5 */
+}
+
+.door-open {
+  background-color: #e3f2fd !important;
+}
+
+.door-closed {
+  background-color: #f5f5f5 !important;
+}
+
+.door-content {
+  text-align: center;
+}
+
+.door-avatar {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 8px;
+}
+
+.avatar-info {
+  background-color: #0288d1 !important;
+  /* info.main */
+}
+
+.avatar-grey {
+  background-color: #9e9e9e !important;
+  /* grey.500 */
+}
+
+.door-chip {
+  margin-bottom: 16px !important;
+}
+
+.door-button {
+  border-radius: 50px !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+/* --- Footer --- */
+.footer-container {
+  text-align: center;
+  margin-top: 24px;
+  color: #889;
 }

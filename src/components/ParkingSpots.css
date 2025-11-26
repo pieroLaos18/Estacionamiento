@@ -1,0 +1,123 @@
+/* ===== PARKING SPOTS GRID ===== */
+.parking-spots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+    .parking-spots-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== SPOT CARD ===== */
+.spot-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.spot-card.available {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.spot-card.occupied {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.spot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== SPOT HEADER ===== */
+.spot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.spot-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.spot-icon svg {
+    font-size: 24px;
+}
+
+.icon-available {
+    background-color: #10b981;
+    color: white;
+}
+
+.icon-occupied {
+    background-color: #ef4444;
+    color: white;
+}
+
+.spot-status {
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+}
+
+.status-available {
+    background-color: #10b981 !important;
+    color: white !important;
+}
+
+.status-occupied {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+/* ===== SPOT INFO ===== */
+.spot-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.spot-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+}
+
+.spot-distance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.distance-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.distance-value {
+    color: #0f172a;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+/* .spot-description {
+    color: #64748b;
+    font-size: 0.875rem;
+} */

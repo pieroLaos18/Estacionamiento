@@ -1,0 +1,146 @@
+/* ===== CONTENEDOR PRINCIPAL DEL DASHBOARD ===== */
+.dashboard-wrapper {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+/* ===== ENCABEZADO ===== */
+.dashboard-header {
+    margin-bottom: 8px;
+}
+
+.dashboard-title {
+    font-weight: 700 !important;
+    color: #0f172a;
+    letter-spacing: -0.8px;
+    font-size: 2rem !important;
+    margin-bottom: 4px !important;
+}
+
+.dashboard-subtitle {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+/* ===== CUADRÍCULA DE TARJETAS KPI ===== */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+@media (max-width: 1200px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== CUADRÍCULA DE GRÁFICOS ===== */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+}
+
+@media (max-width: 900px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== CONTENEDORES DE GRÁFICOS ===== */
+.chart-paper {
+    padding: 24px;
+    border-radius: 16px !important;
+    border: 1px solid #e2e8f0;
+    height: 100%;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: none !important;
+    background: #ffffff;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.chart-paper:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.chart-title {
+    font-weight: 600 !important;
+    color: #0f172a;
+    font-size: 1.125rem !important;
+    letter-spacing: -0.3px;
+}
+
+.chart-badge {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    padding: 6px 14px;
+    border-radius: 24px;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #bfdbfe;
+}
+
+.chart-badge-text {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+}
+
+.chart-container-box {
+    flex-grow: 1;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ===== SCROLLBAR PERSONALIZADO ===== */
+.dashboard-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dashboard-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dashboard-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dashboard-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
