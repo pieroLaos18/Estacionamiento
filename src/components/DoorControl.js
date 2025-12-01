@@ -28,7 +28,10 @@ function DoorCard({ title, isOpen, connected, onOpen, onClose, type }) {
                     <Tooltip title={isOpen ? "Cerrar Barrera" : "Abrir Barrera"}>
                         <span>
                             <IconButton
-                                onClick={isOpen ? onClose : onOpen}
+                                onClick={() => {
+                                    console.log(`🖱️ Click en ${title}: ${isOpen ? 'cerrar' : 'abrir'}`);
+                                    isOpen ? onClose() : onOpen();
+                                }}
                                 disabled={!connected}
                                 color={isOpen ? "error" : "primary"}
                                 sx={{

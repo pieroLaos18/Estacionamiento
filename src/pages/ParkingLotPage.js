@@ -135,6 +135,9 @@ export default function ParkingLotPage({
     const handleProcessExit = async (plate) => {
         const res = await processPayment(plate);
         if (res.success) {
+            // 🚪 ABRIR PUERTA AUTOMÁTICAMENTE DESPUÉS DEL PAGO
+            console.log("✅ Pago confirmado - Abriendo puerta de salida automáticamente");
+            handleAbrirSalida();
             resetSalidaDetectada();
             return true;
         }

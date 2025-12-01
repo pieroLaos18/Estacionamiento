@@ -91,6 +91,7 @@ export default function useMqtt() {
             } else if (topic === "estacionamiento/puerta/entrada/estado") {
                 setPuertaEntradaAbierta(payload === "abierta");
             } else if (topic === "estacionamiento/puerta/salida/estado") {
+                console.log("🚪 Estado puerta salida recibido:", payload);
                 setPuertaSalidaAbierta(payload === "abierta");
             } else if (topic === "estacionamiento/modo/estado") {
                 setModoAutomatico(payload === "automatico");
@@ -143,9 +144,21 @@ export default function useMqtt() {
         mqttClient?.publish("estacionamiento/puerta/control", "cerrarEntrada");
     };
     const handleAbrirSalida = () => {
+        console.log("📱 Enviando comando: abrirSalida");
+        console.log("🔗 Cliente MQTT conectado:", mqttClient?.connected);
+        if (!mqttClient?.connected) {
+            console.warn("⚠️ Cliente MQTT no conectado");
+            return;
+        }
         mqttClient?.publish("estacionamiento/puerta/control", "abrirSalida");
     };
     const handleCerrarSalida = () => {
+        console.log("📱 Enviando comando: cerrarSalida");
+        console.log("🔗 Cliente MQTT conectado:", mqttClient?.connected);
+        if (!mqttClient?.connected) {
+            console.warn("⚠️ Cliente MQTT no conectado");
+            return;
+        }
         mqttClient?.publish("estacionamiento/puerta/control", "cerrarSalida");
     };
     const handleToggleModo = () => {
