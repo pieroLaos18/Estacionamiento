@@ -195,9 +195,13 @@ export function ParkingProvider({ children }) {
         const diffMins = Math.floor(diffMs / 60000);
         const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-        let cost = rates.base;
+        // ✅ CORREGIDO: Usar tarifa guardada del vehículo al momento de entrada
+        const rateBase = vehicle.rateBaseAtEntry || rates.base; // Fallback a tarifa actual si no existe
+        const rateMinute = vehicle.rateMinuteAtEntry || rates.minute;
+
+        let cost = rateBase;
         if (diffMins > 60) {
-            cost += (diffMins - 60) * rates.minute;
+            cost += (diffMins - 60) * rateMinute;
         }
 
         return {
@@ -207,7 +211,9 @@ export function ParkingProvider({ children }) {
             totalTime: diffMins,
             totalSeconds: diffSecs,
             cost: parseFloat(cost.toFixed(2)),
-            spotId: vehicle.spotId
+            spotId: vehicle.spotId,
+            rateBaseAtEntry: rateBase,
+            rateMinuteAtEntry: rateMinute
         };
     };
 

@@ -9,6 +9,7 @@ import {
     ArrowCircleDown as ArrowDownIcon,
     Search as SearchIcon
 } from '@mui/icons-material';
+import { useParking } from '../context/ParkingContext';
 import './ExitModal.css';
 
 export default function ExitModal({
@@ -20,6 +21,7 @@ export default function ExitModal({
     handleAbrirSalida,
     handleCerrarSalida
 }) {
+    const { rates } = useParking(); // ✅ Obtener tarifas dinámicas
     const [searchPlate, setSearchPlate] = useState('');
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [step, setStep] = useState('search'); // search, payment, success
@@ -43,7 +45,7 @@ export default function ExitModal({
         if (vehicle) {
             setSelectedVehicle(vehicle);
             // Calcular el precio UNA SOLA VEZ cuando se encuentra el vehículo
-            const fee = calculateFee(vehicle.entryTime);
+            const fee = calculateFee(vehicle.entryTime, vehicle);
             setCalculatedFee(fee);
             setStep('payment');
             setError(null);
@@ -52,22 +54,22 @@ export default function ExitModal({
         }
     };
 
-    const calculateFee = (entryTime) => {
+    const calculateFee = (entryTime, vehicle = null) => {
         const entry = new Date(entryTime);
         const now = new Date();
         const diffMs = now - entry;
         const diffMins = Math.ceil(diffMs / 60000);
 
-        // Lógica de precios:
-        // - Primera hora (0-60 min): S/. 5.00 fijo
-        // - Después de la primera hora: S/. 5.00 + (minutos adicionales × S/. 0.05)
+        // ✅ CORREGIDO: Usar tarifa específica del vehículo al momento de entrada
+        const rateBase = vehicle?.rateBaseAtEntry || rates.base;
+        const rateMinute = vehicle?.rateMinuteAtEntry || rates.minute;
 
         if (diffMins <= 60) {
-            return 5.00; // Primera hora: S/. 5.00
+            return rateBase; // ← Usar tarifa base del vehículo
         } else {
             const additionalMins = diffMins - 60;
-            const additionalCost = additionalMins * 0.05;
-            return 5.00 + additionalCost;
+            const additionalCost = additionalMins * rateMinute; // ← Usar tarifa por minuto del vehículo
+            return rateBase + additionalCost;
         }
     };
 
@@ -215,6 +217,12 @@ export default function ExitModal({
                                     <span className="info-label">Tiempo Estacionado:</span>
                                     <span className="info-value">
                                         {calculateDuration(selectedVehicle.entryTime)}
+                                    </span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Tarifa Aplicada:</span>
+                                    <span className="info-value rate-info">
+                                        S/. {(selectedVehicle.rateBaseAtEntry || rates.base).toFixed(2)} base + S/. {(selectedVehicle.rateMinuteAtEntry || rates.minute).toFixed(2)}/min
                                     </span>
                                 </div>
                                 <div className="divider"></div>
