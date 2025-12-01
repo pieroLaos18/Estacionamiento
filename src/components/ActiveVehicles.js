@@ -73,7 +73,13 @@ export default function ActiveVehicles({ vehicles }) {
                     const endTime = exitTimeMs || now;
                     const elapsedMs = Math.max(0, endTime - entryTime); // Evitar negativos
                     const preciseMinutes = elapsedMs / 60000;
-                    const { fee } = calculateParkingFee(entryTime, endTime, rates);
+                    
+                    // ✅ Usar tarifas guardadas del vehículo al momento de entrada, no las actuales
+                    const vehicleRates = {
+                        base: Number(vehicle.rateBaseAtEntry) || Number(rates.base) || 5.00,
+                        minute: Number(vehicle.rateMinuteAtEntry) || Number(rates.minute) || 0.10
+                    };
+                    const { fee } = calculateParkingFee(entryTime, endTime, vehicleRates);
 
                     return (
                         <ListItem
