@@ -104,11 +104,19 @@ export function ParkingProvider({ children }) {
     };
 
     const assignPendingToSpot = async (pendingId, spotId, entryTime = null) => {
+        console.log(`🔄 Iniciando asignación: pendingId=${pendingId}, spotId=${spotId}`);
+        
         const pending = pendingVehicles.find(v => v.id === pendingId);
-        if (!pending) return { success: false, msg: "Vehículo no encontrado en cola" };
+        if (!pending) {
+            console.error("❌ Vehículo no encontrado en cola:", pendingId);
+            return { success: false, msg: "Vehículo no encontrado en cola" };
+        }
+
+        console.log(`📋 Vehículo encontrado: ${pending.plate}`);
 
         try {
             // 1. Registrar entrada en plaza con timestamp de detección si está disponible
+            console.log("📡 Enviando request a /vehicles/entry...");
             const resEntry = await fetch(`${API_URL}/vehicles/entry`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -118,13 +126,25 @@ export function ParkingProvider({ children }) {
                     entryTime: entryTime ? entryTime.toISOString() : undefined
                 })
             });
+            
+            console.log("📡 Response status:", resEntry.status);
+            
+            if (!resEntry.ok) {
+                const errorText = await resEntry.text();
+                console.error("❌ Error en API vehicles/entry:", errorText);
+                return { success: false, msg: `Error del servidor: ${resEntry.status}` };
+            }
+            
             const resultEntry = await resEntry.json();
+            console.log("📡 Response JSON:", resultEntry);
 
             if (resultEntry.success) {
                 // 2. Marcar como asignado en la cola
+                console.log("✅ Marcando como asignado en cola...");
                 await fetch(`${API_URL}/queue/${pendingId}/assign`, { method: 'POST' });
 
                 // 3. Actualizar estados
+                console.log("🔄 Actualizando estados locales...");
                 await fetchActiveVehicles();
                 await fetchPendingVehicles();
 

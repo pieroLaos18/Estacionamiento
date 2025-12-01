@@ -123,7 +123,15 @@ export default function ParkingLotPage({
 
         if (result.success) {
             console.log("✅ Vehículo agregado a cola:", licensePlate);
+            console.log("🚪 Intentando abrir puerta de entrada...");
+            console.log("🔍 Estado conexión:", connected ? "CONECTADO" : "DESCONECTADO");
             handleAbrirEntrada();
+            
+            // Verificar que el comando se envió correctamente
+            setTimeout(() => {
+                console.log("🔄 Estado de puerta después de 2s:", puertaEntradaAbierta ? "ABIERTA" : "CERRADA");
+            }, 2000);
+            
             resetVehiculoDetectado();
             setShowEntryModal(false);
         } else {
@@ -151,7 +159,11 @@ export default function ParkingLotPage({
         const spotId = vehiculoEstacionado.plaza;
         const parkingKey = `${spotId}-${vehiculoEstacionado.timestamp}`;
 
+        console.log(`🅿️ Vehículo detectado en plaza ${spotId}`);
+        console.log(`📋 Vehículos en cola: ${pendingVehicles.length}`);
+
         if (lastProcessedParking.current === parkingKey) {
+            console.log("⏭️ Evento ya procesado, ignorando");
             return;
         }
 
@@ -164,15 +176,22 @@ export default function ParkingLotPage({
         });
 
         if (pendingVehicles.length === 0) {
+            console.log("⚠️ No hay vehículos en cola para asignar");
             lastProcessedParking.current = parkingKey;
             return;
         }
 
         if (pendingVehicles.length === 1) {
+            console.log(`🎯 Asignando automáticamente: ${pendingVehicles[0].plate} → Plaza ${spotId}`);
             (async () => {
-                await assignPendingToSpot(pendingVehicles[0].id, spotId, detectionTime);
-                lastProcessedParking.current = parkingKey;
-                setParkingDetectionTime(null); // Limpiar después de usar
+                try {
+                    const result = await assignPendingToSpot(pendingVehicles[0].id, spotId, detectionTime);
+                    console.log("✅ Asignación exitosa:", result);
+                    lastProcessedParking.current = parkingKey;
+                    setParkingDetectionTime(null); // Limpiar después de usar
+                } catch (error) {
+                    console.error("❌ Error en asignación automática:", error);
+                }
             })();
             return;
         }
