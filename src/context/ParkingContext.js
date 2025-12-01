@@ -29,6 +29,13 @@ export function ParkingProvider({ children }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Actualizar cola periódicamente
+    useEffect(() => {
+        const interval = setInterval(fetchPendingVehicles, 3000); // Cada 3 segundos
+        return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const fetchRates = async () => {
         try {
             const res = await fetch(`${API_URL}/rates`);
@@ -195,9 +202,9 @@ export function ParkingProvider({ children }) {
         const diffMins = Math.floor(diffMs / 60000);
         const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-        // ✅ CORREGIDO: Usar tarifa guardada del vehículo al momento de entrada
-        const rateBase = vehicle.rateBaseAtEntry || rates.base; // Fallback a tarifa actual si no existe
-        const rateMinute = vehicle.rateMinuteAtEntry || rates.minute;
+        // ✅ CORREGIDO: Usar tarifa guardada del vehículo al momento de entrada y convertir a número
+        const rateBase = Number(vehicle.rateBaseAtEntry) || Number(rates.base) || 5.00;
+        const rateMinute = Number(vehicle.rateMinuteAtEntry) || Number(rates.minute) || 0.10;
 
         let cost = rateBase;
         if (diffMins > 60) {
@@ -218,10 +225,18 @@ export function ParkingProvider({ children }) {
     };
 
     const processPayment = async (plate) => {
+        console.log("💰 processPayment iniciado para placa:", plate);
+        
         const feeData = calculateFee(plate);
-        if (!feeData) return { success: false, msg: "Vehículo no encontrado" };
+        console.log("📊 Datos de tarifa calculados:", feeData);
+        
+        if (!feeData) {
+            console.error("❌ No se encontraron datos de tarifa para:", plate);
+            return { success: false, msg: "Vehículo no encontrado" };
+        }
 
         try {
+            console.log("📡 Enviando request a /vehicles/exit...");
             const res = await fetch(`${API_URL}/vehicles/exit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -230,15 +245,22 @@ export function ParkingProvider({ children }) {
                     // ✅ CORREGIDO: No enviar cost ni totalTime, el backend los calculará
                 })
             });
+            
+            console.log("📡 Response status:", res.status);
             const result = await res.json();
+            console.log("📡 Response body:", result);
 
             if (result.success) {
+                console.log("✅ Backend confirmó pago exitoso, actualizando estados...");
                 await fetchActiveVehicles();
                 await fetchDashboardMetrics();
                 return { success: true, msg: "Pago confirmado", data: feeData };
             }
+            
+            console.error("❌ Backend rechazó el pago:", result.msg);
             return { success: false, msg: result.msg };
         } catch (err) {
+            console.error("❌ Error de red en processPayment:", err);
             return { success: false, msg: "Error de conexión" };
         }
     };

@@ -141,15 +141,26 @@ export default function ParkingLotPage({
 
     // Handler para procesar salida desde el modal
     const handleProcessExit = async (plate) => {
-        const res = await processPayment(plate);
-        if (res.success) {
-            // 🚪 ABRIR PUERTA AUTOMÁTICAMENTE DESPUÉS DEL PAGO
-            console.log("✅ Pago confirmado - Abriendo puerta de salida automáticamente");
-            handleAbrirSalida();
-            resetSalidaDetectada();
-            return true;
+        console.log("🚗 handleProcessExit iniciado para placa:", plate);
+        
+        try {
+            const res = await processPayment(plate);
+            console.log("📝 Respuesta de processPayment:", res);
+            
+            if (res.success) {
+                // 🚪 ABRIR PUERTA AUTOMÁTICAMENTE DESPUÉS DEL PAGO
+                console.log("✅ Pago confirmado - Abriendo puerta de salida automáticamente");
+                handleAbrirSalida();
+                resetSalidaDetectada();
+                return true;
+            }
+            
+            console.error("❌ processPayment falló:", res.msg);
+            throw new Error(res.msg || "Error al procesar pago");
+        } catch (error) {
+            console.error("❌ Error en handleProcessExit:", error);
+            throw error;
         }
-        throw new Error(res.msg || "Error al procesar pago");
     };
 
     // Efecto para manejar asignación cuando se detecta estacionamiento

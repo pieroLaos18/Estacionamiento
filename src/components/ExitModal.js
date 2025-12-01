@@ -102,19 +102,27 @@ export default function ExitModal({
 
     const handlePayment = async () => {
         setLoading(true);
+        setError(null); // Limpiar errores previos
+        console.log("🔄 Iniciando proceso de pago para:", selectedVehicle?.plate);
+        
         try {
             // Simular proceso de pago
+            console.log("⏳ Simulando proceso de pago...");
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             // Procesar salida en backend
+            console.log("📡 Enviando request al backend...");
             await onProcessExit(selectedVehicle.plate);
 
             // Abrir barrera automáticamente tras pago
+            console.log("🚪 Abriendo barrera de salida...");
             handleAbrirSalida();
 
+            console.log("✅ Pago completado exitosamente");
             setStep('success');
         } catch (err) {
-            setError('Error al procesar el pago. Intente nuevamente.');
+            console.error("❌ Error en handlePayment:", err);
+            setError(err.message || 'Error al procesar el pago. Intente nuevamente.');
         } finally {
             setLoading(false);
         }
@@ -227,14 +235,14 @@ export default function ExitModal({
                                 <div className="info-row">
                                     <span className="info-label">Tarifa Aplicada:</span>
                                     <span className="info-value rate-info">
-                                        S/. {Number(selectedVehicle.rateBaseAtEntry || rates.base).toFixed(2)} base + S/. {Number(selectedVehicle.rateMinuteAtEntry || rates.minute).toFixed(2)}/min
+                                        S/. {(Number(selectedVehicle?.rateBaseAtEntry) || Number(rates?.base) || 5.00).toFixed(2)} base + S/. {(Number(selectedVehicle?.rateMinuteAtEntry) || Number(rates?.minute) || 0.10).toFixed(2)}/min
                                     </span>
                                 </div>
                                 <div className="divider"></div>
                                 <div className="info-row total-row">
                                     <span className="info-label">Total a Pagar:</span>
                                     <span className="total-amount">
-                                        S/. {calculatedFee.toFixed(2)}
+                                        S/. {Number(calculatedFee || 0).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
