@@ -40,6 +40,11 @@ export default function ExitModal({
         }
     }, [isOpen]);
 
+    // Validar que rates esté disponible DESPUÉS de los hooks
+    if (!rates || !rates.base) {
+        return null; // No renderizar hasta que rates esté cargado
+    }
+
     const handleSearch = () => {
         const vehicle = activeVehicles.find(v => v.plate.toUpperCase() === searchPlate.toUpperCase());
         if (vehicle) {
@@ -222,7 +227,7 @@ export default function ExitModal({
                                 <div className="info-row">
                                     <span className="info-label">Tarifa Aplicada:</span>
                                     <span className="info-value rate-info">
-                                        S/. {(selectedVehicle.rateBaseAtEntry || rates.base).toFixed(2)} base + S/. {(selectedVehicle.rateMinuteAtEntry || rates.minute).toFixed(2)}/min
+                                        S/. {Number(selectedVehicle.rateBaseAtEntry || rates.base).toFixed(2)} base + S/. {Number(selectedVehicle.rateMinuteAtEntry || rates.minute).toFixed(2)}/min
                                     </span>
                                 </div>
                                 <div className="divider"></div>

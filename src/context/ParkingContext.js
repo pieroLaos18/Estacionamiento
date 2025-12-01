@@ -226,9 +226,8 @@ export function ParkingProvider({ children }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    plate,
-                    cost: feeData.cost,
-                    totalTime: feeData.totalTime
+                    plate
+                    // ✅ CORREGIDO: No enviar cost ni totalTime, el backend los calculará
                 })
             });
             const result = await res.json();
