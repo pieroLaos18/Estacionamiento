@@ -29,7 +29,17 @@ import PageHeader from "../components/PageHeader";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 
 export default function DashboardPage() {
-    const { activeVehicles, earningsToday, earningsMonth, averageTime, bestMonth, history } = useParking();
+    const { activeVehicles, earningsToday, earningsMonth, averageTime, bestMonth, fetchHistory } = useParking();
+    const [history, setHistory] = React.useState([]);
+
+    // Cargar historial al montar el componente
+    React.useEffect(() => {
+        const loadHistory = async () => {
+            const historyData = await fetchHistory();
+            setHistory(historyData);
+        };
+        loadHistory();
+    }, [fetchHistory]);
 
     // Preparar datos de gráficos desde el historial
     const weeklyData = React.useMemo(() => {
@@ -69,21 +79,30 @@ export default function DashboardPage() {
             const minute = minutes % 60;
             const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
-            // Contar vehículos que entraron en este intervalo de 15 min
-            const intervalData = history.filter(record => {
-                const date = new Date(record.entryTime);
-                const recordDate = date.toDateString();
+            // Contar TODAS las transacciones (entradas + salidas) en este intervalo
+            const intervalTransactions = history.filter(record => {
+                const entryDate = new Date(record.entryTime);
+                const exitDate = record.exitTime ? new Date(record.exitTime) : null;
                 const todayDate = now.toDateString();
-                const recordMinutes = date.getHours() * 60 + date.getMinutes();
 
-                return recordDate === todayDate &&
-                    recordMinutes >= minutes &&
-                    recordMinutes < minutes + 15;
+                // Verificar si la entrada fue en este intervalo
+                const entryInInterval =
+                    entryDate.toDateString() === todayDate &&
+                    entryDate.getHours() * 60 + entryDate.getMinutes() >= minutes &&
+                    entryDate.getHours() * 60 + entryDate.getMinutes() < minutes + 15;
+
+                // Verificar si la salida fue en este intervalo
+                const exitInInterval = exitDate &&
+                    exitDate.toDateString() === todayDate &&
+                    exitDate.getHours() * 60 + exitDate.getMinutes() >= minutes &&
+                    exitDate.getHours() * 60 + exitDate.getMinutes() < minutes + 15;
+
+                return entryInInterval || exitInInterval;
             });
 
             intervals.push({
                 time: timeLabel,
-                cars: intervalData.length
+                cars: intervalTransactions.length
             });
         }
 

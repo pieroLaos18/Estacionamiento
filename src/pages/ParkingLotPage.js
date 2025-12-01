@@ -11,6 +11,7 @@ import { useParking } from "../context/ParkingContext";
 import ParkingSpots from "../components/ParkingSpots";
 import DoorControl from "../components/DoorControl";
 import EntryModal from "../components/EntryModal";
+import ExitModal from "../components/ExitModal";
 import ActiveVehicles from "../components/ActiveVehicles";
 import EntryQueue from "../components/EntryQueue";
 import AssignSpotModal from "../components/AssignSpotModal";
@@ -19,7 +20,6 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import CoinsIcon from "../components/CoinsIcon";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import PageHeader from "../components/PageHeader";
 import LocalParkingOutlinedIcon from "@mui/icons-material/LocalParkingOutlined";
 import "./ParkingLotPage.css";
 
@@ -29,13 +29,18 @@ export default function ParkingLotPage({
     connected,
     handleAbrirEntrada, handleCerrarEntrada,
     handleAbrirSalida, handleCerrarSalida,
-    // Nuevos props para detección de entrada
+    // Nuevos props para detección de entrada/salida
     vehiculoDetectado,
+    salidaDetectada, // Nuevo prop
     vehiculoEstacionado,
     ultimaSalida,
     resetVehiculoDetectado,
-    resetVehiculoEstacionado, // Nuevo prop
-    resetUltimaSalida, // Nuevo prop
+    resetSalidaDetectada, // Nuevo prop
+    resetVehiculoEstacionado,
+    resetUltimaSalida,
+    // Nuevos props para modo
+    modoAutomatico,
+    handleToggleModo
 }) {
     const {
         activeVehicles,
@@ -43,50 +48,54 @@ export default function ParkingLotPage({
         addToPendingQueue,
         assignPendingToSpot,
         removePendingVehicle,
-        calculateFee,
         processPayment,
         registerExitTimeByPlate
     } = useParking();
 
-    // Limpiar estados de MQTT al montar el componente para evitar "fantasmas"
+    // Limpiar estados de MQTT al montar
     useEffect(() => {
         if (resetVehiculoEstacionado) resetVehiculoEstacionado();
         if (resetUltimaSalida) resetUltimaSalida();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Se ejecuta solo al montar
-
+    }, []);
 
     const [entryPlate, setEntryPlate] = useState("");
     const [entryMsg] = useState(null);
-    const [exitPlate, setExitPlate] = useState("");
-    const [paymentInfo, setPaymentInfo] = useState(null);
-    const [exitMsg, setExitMsg] = useState(null);
 
     // Modales
     const [showEntryModal, setShowEntryModal] = useState(false);
+    const [showExitModal, setShowExitModal] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [pendingSpotId, setPendingSpotId] = useState(null);
+    const [parkingDetectionTime, setParkingDetectionTime] = useState(null); // Timestamp de detección
 
     // Refs para evitar procesamiento duplicado
     const lastProcessedParking = useRef(null);
     const lastProcessedExit = useRef(null);
 
-    // Detección de entrada
+    // Detección de entrada (Solo si modo automático está activo)
     useEffect(() => {
         if (!vehiculoDetectado) return;
-        if (!puertaEntradaAbierta && !showEntryModal) {
+        if (modoAutomatico && !puertaEntradaAbierta && !showEntryModal) {
             setShowEntryModal(true);
         }
-    }, [vehiculoDetectado, puertaEntradaAbierta, showEntryModal]);
+    }, [vehiculoDetectado, puertaEntradaAbierta, showEntryModal, modoAutomatico]);
 
-    // Detección de salida CON DEDUPLICACIÓN
+    // Detección de salida (Solo si modo automático está activo)
+    useEffect(() => {
+        if (!salidaDetectada) return;
+        if (modoAutomatico && !showExitModal) {
+            setShowExitModal(true);
+        }
+    }, [salidaDetectada, showExitModal, modoAutomatico]);
+
+    // Detección de salida CON DEDUPLICACIÓN (Evento final de plaza liberada)
     useEffect(() => {
         if (!ultimaSalida) return;
 
         const spotId = ultimaSalida.plaza;
         const exitKey = `${spotId}-${ultimaSalida.timestamp || Date.now()}`;
 
-        // Evitar procesar el mismo evento múltiples veces
         if (lastProcessedExit.current === exitKey) {
             return;
         }
@@ -103,43 +112,10 @@ export default function ParkingLotPage({
             if (timeParked >= MIN_PARKING_TIME) {
                 console.log(`🚗 Plaza ${spotId} liberada - ${vehiculo.plate}`);
                 registerExitTimeByPlate(vehiculo.plate);
-            } else {
-                console.log(`⚠️ Evento ignorado - ${vehiculo.plate} recién llegó`);
             }
         }
-
-        // Marcar como procesado SIEMPRE
         lastProcessedExit.current = exitKey;
     }, [ultimaSalida, activeVehicles, registerExitTimeByPlate]);
-
-    const handleSearchExit = () => {
-        const info = calculateFee(exitPlate);
-        if (info) {
-            // Solo congelar el tiempo si el vehículo NO tiene exitTime aún
-            const vehicle = activeVehicles.find(v => v.plate === exitPlate);
-            if (vehicle && !vehicle.exitTime) {
-                registerExitTimeByPlate(exitPlate);
-            }
-            setPaymentInfo(info);
-            setExitMsg(null);
-        } else {
-            setExitMsg({ type: "error", text: "Vehículo no encontrado en el sistema" });
-            setPaymentInfo(null);
-        }
-    };
-
-    const handlePayment = async () => {
-        const res = await processPayment(exitPlate);
-        if (res.success) {
-            handleAbrirSalida();
-            setExitMsg({ type: "success", text: "Pago procesado exitosamente" });
-            setPaymentInfo(null);
-            setExitPlate("");
-            setTimeout(() => setExitMsg(null), 3000);
-        } else {
-            setExitMsg({ type: "error", text: res.msg || "Error al procesar pago" });
-        }
-    };
 
     // Handler para confirmar entrada desde el modal
     const handleConfirmEntry = async (licensePlate) => {
@@ -155,6 +131,16 @@ export default function ParkingLotPage({
         }
     };
 
+    // Handler para procesar salida desde el modal
+    const handleProcessExit = async (plate) => {
+        const res = await processPayment(plate);
+        if (res.success) {
+            resetSalidaDetectada();
+            return true;
+        }
+        throw new Error(res.msg || "Error al procesar pago");
+    };
+
     // Efecto para manejar asignación cuando se detecta estacionamiento
     useEffect(() => {
         if (!vehiculoEstacionado) return;
@@ -166,20 +152,24 @@ export default function ParkingLotPage({
             return;
         }
 
+        // Guardar timestamp de detección AHORA
+        const detectionTime = new Date();
+        setParkingDetectionTime({
+            spotId,
+            timestamp: detectionTime,
+            mqttTimestamp: vehiculoEstacionado.timestamp
+        });
+
         if (pendingVehicles.length === 0) {
-            console.log("⚠️ Estacionamiento en plaza", spotId, "pero no hay cola");
             lastProcessedParking.current = parkingKey;
             return;
         }
 
         if (pendingVehicles.length === 1) {
-            // Wrapper async para poder usar await dentro de useEffect
             (async () => {
-                const result = await assignPendingToSpot(pendingVehicles[0].id, spotId);
-                if (result.success) {
-                    console.log("✅ Asignado a plaza", spotId, ":", result.vehicle.plate);
-                }
+                await assignPendingToSpot(pendingVehicles[0].id, spotId, detectionTime);
                 lastProcessedParking.current = parkingKey;
+                setParkingDetectionTime(null); // Limpiar después de usar
             })();
             return;
         }
@@ -190,131 +180,76 @@ export default function ParkingLotPage({
     }, [vehiculoEstacionado, pendingVehicles, assignPendingToSpot]);
 
     const handleConfirmAssignment = async (pendingId) => {
-        const result = await assignPendingToSpot(pendingId, pendingSpotId);
-
+        const result = await assignPendingToSpot(
+            pendingId,
+            pendingSpotId,
+            parkingDetectionTime?.timestamp // Usar timestamp de detección
+        );
         if (result.success) {
-            console.log("✅ Asignado a plaza", pendingSpotId, ":", result.vehicle.plate);
             setShowAssignModal(false);
             setPendingSpotId(null);
-        } else {
-            console.error("❌ Error al asignar:", result.msg);
+            setParkingDetectionTime(null); // Limpiar después de usar
         }
     };
 
     const handleRemovePending = async (pendingId) => {
-        const result = await removePendingVehicle(pendingId);
-        if (result.success) {
-            console.log("🗑️ Vehículo eliminado de cola");
-        }
+        await removePendingVehicle(pendingId);
     };
 
     return (
         <div className="parking-container">
-            {/* Header */}
-            <PageHeader
-                title="Control de Estacionamiento"
-                subtitle="Gestión de entradas, salidas y monitoreo en tiempo real"
-                icon={<LocalParkingOutlinedIcon />}
-                iconColor="secondary"
-            />
+            {/* Page Title */}
+            <div className="page-header">
+                <div className="header-left">
+                    <Typography variant="h4" className="page-title">
+                        Control de Estacionamiento
+                    </Typography>
+                    <Typography variant="body2" className="page-subtitle">
+                        Gestión inteligente de plazas y accesos
+                    </Typography>
+                </div>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="header-controls-container">
+                <div className="controls-group">
+                    {/* Switch Modo Automático */}
+                    <div className="auto-mode-switch">
+                        <span className={`mode-label ${modoAutomatico ? 'active' : ''}`}>
+                            {modoAutomatico ? 'Modo Auto ON' : 'Modo Manual'}
+                        </span>
+                        <div
+                            onClick={handleToggleModo}
+                            className={`switch-track ${modoAutomatico ? 'active' : ''}`}
+                        >
+                            <div className={`switch-thumb ${modoAutomatico ? 'active' : ''}`} />
+                        </div>
+                    </div>
+
+                    {/* Botones Manuales */}
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<LocalParkingOutlinedIcon />}
+                        onClick={() => setShowEntryModal(true)}
+                        className="btn-manual"
+                    >
+                        Registrar Entrada
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutOutlinedIcon />}
+                        onClick={() => setShowExitModal(true)}
+                        className="btn-manual"
+                    >
+                        Procesar Salida
+                    </Button>
+                </div>
+            </div>
 
             {/* Main Grid */}
             <div className="parking-grid">
-                {/* Exit Control */}
-                <Paper className="control-paper">
-                    <div className="paper-header">
-                        <div className="header-icon-wrapper exit-color">
-                            <LogoutOutlinedIcon />
-                        </div>
-                        <div>
-                            <Typography variant="h6" className="paper-title">
-                                Procesar Salida
-                            </Typography>
-                            <Typography variant="caption" className="paper-subtitle">
-                                Busque el vehículo y procese el pago
-                            </Typography>
-                        </div>
-                    </div>
-
-                    <div className="search-group">
-                        <TextField
-                            fullWidth
-                            size="medium"
-                            label="Placa del Vehículo"
-                            value={exitPlate}
-                            onChange={(e) => setExitPlate(e.target.value.toUpperCase())}
-                            placeholder="ABC-123"
-                            className="plate-input"
-                        />
-                        <Button
-                            variant="outlined"
-                            onClick={handleSearchExit}
-                            disabled={!exitPlate}
-                            className="btn-search"
-                        >
-                            <SearchOutlinedIcon />
-                        </Button>
-                    </div>
-
-                    {paymentInfo && (
-                        <div className="payment-summary">
-                            <div className="summary-header">
-                                <CoinsIcon fontSize="small" />
-                                <span className="summary-title-text">Resumen de Estacionamiento</span>
-                            </div>
-                            <div className="summary-body">
-                                <div className="summary-row">
-                                    <span>Hora de entrada</span>
-                                    <strong>
-                                        {new Date(paymentInfo.entryTime).toLocaleTimeString('es-PE', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </strong>
-                                </div>
-                                <div className="summary-row">
-                                    <span>Hora de salida</span>
-                                    <strong>
-                                        {new Date(paymentInfo.exitTime).toLocaleTimeString('es-PE', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </strong>
-                                </div>
-                                <div className="summary-row">
-                                    <span>Tiempo transcurrido</span>
-                                    <strong>
-                                        {paymentInfo.totalTime} min {paymentInfo.totalSeconds || 0} s
-                                    </strong>
-                                </div>
-                                <div className="summary-divider"></div>
-                                <div className="summary-total">
-                                    <span>Total a pagar</span>
-                                    <span className="total-amount">S/. {paymentInfo.cost.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        onClick={handlePayment}
-                        disabled={!paymentInfo || !connected}
-                        className="btn-primary exit-btn"
-                        startIcon={<LogoutOutlinedIcon />}
-                    >
-                        Confirmar Pago
-                    </Button>
-
-                    {exitMsg && (
-                        <div className={`alert-box ${exitMsg.type}`}>
-                            {exitMsg.type === 'success' ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />}
-                            <span>{exitMsg.text}</span>
-                        </div>
-                    )}
-                </Paper>
-
                 {/* Parking Spots */}
                 <Paper className="status-paper">
                     <div className="paper-header-simple">
@@ -357,12 +292,12 @@ export default function ParkingLotPage({
                     />
                 </Paper>
 
-                {/* Active Vehicles - Expanded to take full width of bottom row */}
-                <Paper className="status-paper" sx={{ gridColumn: "span 2" }}>
+                {/* Active Vehicles */}
+                <Paper className="status-paper">
                     <ActiveVehicles vehicles={activeVehicles} />
                 </Paper>
 
-                {/* Entry Queue - Nueva sección */}
+                {/* Entry Queue */}
                 <Paper className="status-paper">
                     <EntryQueue
                         pendingVehicles={pendingVehicles}
@@ -375,7 +310,6 @@ export default function ParkingLotPage({
             <EntryModal
                 open={showEntryModal}
                 onClose={() => {
-                    // Al cerrar manualmente, se ignora la detección actual para evitar reaparición
                     setShowEntryModal(false);
                     resetVehiculoDetectado();
                 }}
@@ -384,6 +318,20 @@ export default function ParkingLotPage({
                 onConfirm={handleConfirmEntry}
                 entryMsg={entryMsg}
                 connected={connected}
+            />
+
+            {/* Exit Modal (Nuevo) */}
+            <ExitModal // Importar este componente arriba
+                isOpen={showExitModal}
+                onClose={() => {
+                    setShowExitModal(false);
+                    resetSalidaDetectada();
+                }}
+                activeVehicles={activeVehicles}
+                onProcessExit={handleProcessExit}
+                puertaSalidaAbierta={puertaSalidaAbierta}
+                handleAbrirSalida={handleAbrirSalida}
+                handleCerrarSalida={handleCerrarSalida}
             />
 
             {/* Assign Spot Modal */}

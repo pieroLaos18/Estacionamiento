@@ -10,7 +10,6 @@ export function ParkingProvider({ children }) {
     // --- State ---
     const [activeVehicles, setActiveVehicles] = useState([]);
     const [pendingVehicles, setPendingVehicles] = useState([]);
-    const [history, setHistory] = useState([]);
     const [rates, setRates] = useState({ base: 5.0, minute: 0.10 });
 
     // Metrics
@@ -25,7 +24,6 @@ export function ParkingProvider({ children }) {
     useEffect(() => {
         fetchRates();
         fetchActiveVehicles();
-        fetchHistory();
         fetchDashboardMetrics();
         fetchPendingVehicles();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,9 +53,10 @@ export function ParkingProvider({ children }) {
         try {
             const res = await fetch(`${API_URL}/history`);
             const data = await res.json();
-            setHistory(data);
+            return data; // Retornar directamente sin setear estado
         } catch (err) {
             console.error("Error fetching history:", err);
+            return []; // Retornar array vacío en caso de error
         }
     };
 
@@ -104,16 +103,20 @@ export function ParkingProvider({ children }) {
         }
     };
 
-    const assignPendingToSpot = async (pendingId, spotId) => {
+    const assignPendingToSpot = async (pendingId, spotId, entryTime = null) => {
         const pending = pendingVehicles.find(v => v.id === pendingId);
         if (!pending) return { success: false, msg: "Vehículo no encontrado en cola" };
 
         try {
-            // 1. Registrar entrada en plaza
+            // 1. Registrar entrada en plaza con timestamp de detección si está disponible
             const resEntry = await fetch(`${API_URL}/vehicles/entry`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plate: pending.plate, spotId })
+                body: JSON.stringify({
+                    plate: pending.plate,
+                    spotId,
+                    entryTime: entryTime ? entryTime.toISOString() : undefined
+                })
             });
             const resultEntry = await resEntry.json();
 
@@ -207,7 +210,6 @@ export function ParkingProvider({ children }) {
             if (result.success) {
                 await fetchActiveVehicles();
                 await fetchDashboardMetrics();
-                await fetchHistory();
                 return { success: true, msg: "Pago confirmado", data: feeData };
             }
             return { success: false, msg: result.msg };
@@ -244,14 +246,11 @@ export function ParkingProvider({ children }) {
         }
     };
 
-    const registerExitTime = (spotId) => { };
-
     return (
         <ParkingContext.Provider
             value={{
                 activeVehicles,
                 pendingVehicles,
-                history,
                 rates,
                 earningsToday,
                 earningsMonth,
@@ -264,8 +263,8 @@ export function ParkingProvider({ children }) {
                 calculateFee,
                 processPayment,
                 updateRates,
-                registerExitTime,
                 registerExitTimeByPlate,
+                fetchHistory, // Función bajo demanda
             }}
         >
             {children}

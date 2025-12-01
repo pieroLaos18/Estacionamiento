@@ -27,7 +27,8 @@ const topics = [
     // Nuevos tópicos para eventos de entrada
     "estacionamiento/eventos/entrada",
     "estacionamiento/eventos/estacionado",
-    "estacionamiento/eventos/salida", // Nuevo tópico para eventos de salida
+    "estacionamiento/eventos/salida",
+    "estacionamiento/eventos/salida_detectada", // Nuevo tópico
 ];
 
 export default function useMqtt() {
@@ -44,6 +45,7 @@ export default function useMqtt() {
 
     // Estados para eventos de entrada/salida
     const [vehiculoDetectado, setVehiculoDetectado] = useState(false);
+    const [salidaDetectada, setSalidaDetectada] = useState(false); // Nuevo estado
     const [vehiculoEstacionado, setVehiculoEstacionado] = useState(null); // {plaza, timestamp}
     const [ultimaSalida, setUltimaSalida] = useState(null); // {plaza, timestamp}
 
@@ -96,6 +98,11 @@ export default function useMqtt() {
                 const data = JSON.parse(payload);
                 if (data.evento === "vehiculo_detectado") {
                     setVehiculoDetectado(true);
+                }
+            } else if (topic === "estacionamiento/eventos/salida_detectada") { // Nuevo evento
+                const data = JSON.parse(payload);
+                if (data.evento === "salida_detectada") {
+                    setSalidaDetectada(true);
                 }
             } else if (topic === "estacionamiento/eventos/estacionado") {
                 const data = JSON.parse(payload);
@@ -158,6 +165,10 @@ export default function useMqtt() {
     const resetVehiculoDetectado = () => {
         setVehiculoDetectado(false);
     };
+    
+    const resetSalidaDetectada = () => { // Nuevo reset
+        setSalidaDetectada(false);
+    };
 
     const resetVehiculoEstacionado = () => {
         setVehiculoEstacionado(null);
@@ -183,9 +194,11 @@ export default function useMqtt() {
         publishWifiConfig,
         // Nuevos estados y funciones para entrada/salida
         vehiculoDetectado,
+        salidaDetectada, // Nuevo estado
         vehiculoEstacionado,
         ultimaSalida,
         resetVehiculoDetectado,
+        resetSalidaDetectada, // Nueva función
         resetVehiculoEstacionado,
         resetUltimaSalida,
     };
